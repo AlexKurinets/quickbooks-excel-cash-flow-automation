@@ -131,7 +131,7 @@ class OpenAISuggester:
             if not reason:
                 raise ValueError("empty reason")
             return Suggestion(key, round(confidence, 2), reason, f"openai:{self.model}")
-        except Exception as exc:  # noqa: BLE001 - any failure means the reviewer gets the rules' answer instead
+        except Exception as exc:  # any failure means the reviewer gets the rules' answer instead
             fallback = self.fallback.suggest(account, industry)
             return Suggestion(fallback.line_key, fallback.confidence,
                               f"{fallback.reason} (Model reply not used: {type(exc).__name__}: {exc})"[:400],
