@@ -26,8 +26,8 @@ jobs:
       CASHFLOW_DSN: postgresql://cashflow:cashflow@localhost:5432/cashflow
       TQDM_DISABLE: "1"
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
@@ -42,7 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: test
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Bring the stack up
         run: docker compose up --build -d --wait
       - name: Smoke every documented sequence
