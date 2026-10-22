@@ -1,0 +1,67 @@
+x-app: &app
+  build: .
+  image: quickbooks-excel-cash-flow-automation:local
+  environment: &app-env
+    CASHFLOW_DSN: postgresql://cashflow:cashflow@db:5432/cashflow
+    CASHFLOW_SOURCE: synthetic
+    CASHFLOW_SUGGESTER: ${CASHFLOW_SUGGESTER:-rules}
+    OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    CASHFLOW_OPENAI_MODEL: ${CASHFLOW_OPENAI_MODEL:-gpt-5-mini}
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: cashflow
+      POSTGRES_PASSWORD: cashflow
+      POSTGRES_DB: cashflow
+    ports:
+      - "${CASHFLOW_DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cashflow -d cashflow"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  # Migrates, then loads the synthetic firm and its August and September closes if the database is empty.
+  pipeline:
+    <<: *app
+    command: ["sh", "-c", "cashflow migrate && cashflow seed"]
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    <<: *app
+    command: ["uvicorn", "cashflow.api:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "${CASHFLOW_API_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+    depends_on:
+      pipeline:
+        condition: service_completed_successfully
+
+  dashboard:
+    <<: *app
+    environment:
+      CASHFLOW_API_URL: http://api:8000
+    command: ["streamlit", "run", "dashboard/app.py", "--server.port", "8501", "--server.address", "0.0.0.0"]
+    ports:
+      - "${CASHFLOW_DASHBOARD_PORT:-8501}:8501"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8501/_stcore/health')"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  pgdata:

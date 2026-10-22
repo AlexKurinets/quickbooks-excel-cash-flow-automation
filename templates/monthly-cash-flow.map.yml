@@ -1,0 +1,44 @@
+# Where the automation may write in the house template, and which formula rows the checks read back.
+# Every cell is found by the text of its row label in column A and the month in the header row, so a
+# row someone inserts later moves the numbers with it. A label that is missing or appears twice stops
+# the run before anything is written.
+
+sheet: Cash Flow
+label_column: A
+month_header: Fiscal month
+months: [Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec]
+
+fields:              # single cells, written one column to the right of the label
+  client_name: Client
+  fiscal_year: Fiscal year
+  closed_through: Books closed through
+  source: Source
+
+inputs:              # mapping line key (see src/cashflow/lines.py) -> row label
+  net_income: Net income
+  depreciation: Depreciation and amortization
+  accounts_receivable: (Increase) decrease in accounts receivable
+  inventory: (Increase) decrease in inventory
+  prepaid_other_assets: (Increase) decrease in prepaid expenses and other current assets
+  accounts_payable: Increase (decrease) in accounts payable
+  credit_cards: Increase (decrease) in credit cards payable
+  payroll_liabilities: Increase (decrease) in accrued payroll and payroll taxes
+  sales_tax: Increase (decrease) in sales tax payable
+  deferred_revenue: Increase (decrease) in deferred revenue
+  other_current_liabilities: Increase (decrease) in other current liabilities
+  property_equipment: Purchases of property and equipment
+  other_investing: Other investing activities
+  loans: Proceeds from (repayments of) loans, net
+  line_of_credit: Borrowings (repayments) on line of credit, net
+  owner_contributions: Owner contributions
+  owner_distributions: Owner distributions
+  cash_beginning: {label: Cash at beginning of period, months: first}   # later months are formulas
+  cash_per_balance_sheet: Cash per balance sheet
+
+outputs:             # formula rows, read back after the workbook is recalculated
+  net_cash_operating: Net cash provided by (used in) operating activities
+  net_cash_investing: Net cash provided by (used in) investing activities
+  net_cash_financing: Net cash provided by (used in) financing activities
+  net_change: Net increase (decrease) in cash
+  ending_cash: Cash at end of period
+  difference: Difference
